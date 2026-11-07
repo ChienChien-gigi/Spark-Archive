@@ -145,14 +145,6 @@
             </p>
           </div>
           <div class="flex items-center gap-2">
-            <!-- 備份與匯入 -->
-            <!-- <button onclick="exportData()" class="px-3 py-1.5 text-xs font-mono bg-panel hover:bg-card border border-gray-700/60 rounded-lg text-gray-300 hover:text-highlightOrange transition" title="匯出所有收藏與備忘 JSON">
-            <i class="ri-mail-check-line"></i> 備份資料
-            </button>
-            <label class="px-3 py-1.5 text-xs font-mono bg-panel hover:bg-card border border-gray-700/60 rounded-lg text-gray-300 hover:text-highlightOrange transition cursor-pointer" title="匯入備份檔">
-              <i class="ri-inbox-archive-line"></i> 匯入
-              <input type="file" id="importFile" accept=".json" onchange="importData(event)" class="hidden">
-            </label> -->
             <button onclick="saveCurrentSpark()" class="px-3 py-1.5 text-xs font-mono bg-highlightOrange/10 hover:bg-highlightOrange/20 border border-highlightOrange/40 rounded-lg text-highlightOrange transition">
               <i class="ri-bookmark-fill"></i> 收藏今日靈感
             </button>
@@ -230,7 +222,7 @@
         </div>
 
         <div>
-          <label class="block text-gray-400 mb-1">網址 (URL / IG / Threads 貼文連結)</label>
+          <label class="block text-gray-400 mb-1">網址 (URL / IG / Threads 連結)</label>
           <input type="url" id="itemUrl" required placeholder="https://..." class="w-full bg-panel border border-gray-800 focus:border-highlightOrange/50 text-gray-200 p-2.5 rounded-lg outline-none">
         </div>
 
@@ -377,16 +369,23 @@
     let audioCtx = null;
     let synthGain = null;
 
+    // =========================================================
+    // 自訂 MP3 音樂播放引擎
+    // =========================================================
+    let backgroundAudio = null;
 
-    // =========================================================
-    // 輕音樂合成器音效引擎 (可在這裡自行修改頻率與和弦)
-    // =========================================================
     function toggleAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
+      if (!backgroundAudio) {
+        // 【請將下方引號內的網址或 Base64 替換成您的音樂】
+        // 做法 A：如果您有托管 MP3 檔案的網址，可直接填入網址，例如：
+        // const audioSrc = "https://example.com/your-music.mp3";
+        
+// 做法 B：如果您要使用先前轉換的 Base64 字串，請貼在這邊：
+        const audioSrc = "data:audio/mpeg;base64,你的MP3_Base64字串貼在這裡"; 
+
+        backgroundAudio = new Audio(audioSrc);
+        backgroundAudio.loop = true; // 設定為循環播放
+        backgroundAudio.volume = 0.6; // 預設音量 (0.0 到 1.0)
       }
 
       if (isAudioPlaying) {
@@ -397,60 +396,28 @@
     }
 
     function startHealingMusic() {
-      if (!audioCtx) return;
-      isAudioPlaying = true;
-      document.getElementById('audioBtnText').innerText = "HEALING AUDIO: ON";
-      document.getElementById('audioBtnText').classList.add('text-highlightOrange');
-      document.getElementById('audioStatusDot').className = "w-2 h-2 rounded-full bg-highlightOrange animate-ping";
-
-      /* 
-        【音樂修改說明】
-        您可以自行修改下方 `freqs` 陣列中的頻率數值 (Hz) 來調整和弦氛圍：
-        - 174.61 Hz (F3 音符)
-        - 220.00 Hz (A3 音符)
-        - 261.63 Hz (C4 中音 C)
-        - 329.63 Hz (E4 音符)
-        - 392.00 Hz (G4 音符)
-        組合起來為治癒的 Fmaj7 和弦背景。
-      */
-      const freqs = [174.61, 220.00, 261.63, 329.63, 392.00]; 
+      if (!backgroundAudio) return;
       
-      synthGain = audioCtx.createGain();
-      synthGain.gain.setValueAtTime(0.06, audioCtx.currentTime); // 調整整體音量大小 (預設 0.06)
-      synthGain.connect(audioCtx.destination);
-
-      freqs.forEach(freq => {
-        const osc = audioCtx.createOscillator();
-        const subGain = audioCtx.createGain();
-        
-        osc.type = 'sine'; // 可改為 'triangle' 或 'sawtooth' 改變音色
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        
-        // 微弱 LFO 頻率飄移，製造奇幻冒險的空氣感
-        const lfo = audioCtx.createOscillator();
-        lfo.frequency.setValueAtTime(0.12 + Math.random() * 0.1, audioCtx.currentTime);
-        const lfoGain = audioCtx.createGain();
-        lfoGain.gain.setValueAtTime(1.2, audioCtx.currentTime);
-        lfo.connect(osc.frequency);
-        lfo.start();
-
-        subGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        osc.connect(subGain);
-        subGain.connect(synthGain);
-        osc.start();
+      backgroundAudio.play().then(() => {
+        isAudioPlaying = true;
+        document.getElementById('audioBtnText').innerText = "MY MUSIC: ON";
+        document.getElementById('audioBtnText').classList.add('text-highlightOrange');
+        document.getElementById('audioStatusDot').className = "w-2 h-2 rounded-full bg-highlightOrange animate-ping";
+      }).catch(err => {
+        console.error("播放失敗，請檢查音樂來源或瀏覽器自動播放限制：", err);
+        alert("無法播放音訊，請確認音樂路徑或格式是否正確。");
       });
     }
 
     function stopHealingMusic() {
-      if (synthGain && audioCtx) {
-        synthGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
-        setTimeout(() => {
-          isAudioPlaying = false;
-          document.getElementById('audioBtnText').innerText = "HEALING AUDIO: OFF";
-          document.getElementById('audioBtnText').classList.remove('text-highlightOrange');
-          document.getElementById('audioStatusDot').className = "w-2 h-2 rounded-full bg-gray-500";
-        }, 800);
+      if (backgroundAudio) {
+        backgroundAudio.pause();
+        backgroundAudio.currentTime = 0; // 重置播放進度
       }
+      isAudioPlaying = false;
+      document.getElementById('audioBtnText').innerText = "HEALING AUDIO: OFF";
+      document.getElementById('audioBtnText').classList.remove('text-highlightOrange');
+      document.getElementById('audioStatusDot').className = "w-2 h-2 rounded-full bg-gray-500";
     }
 
 
@@ -620,7 +587,7 @@
             <div class="flex items-center justify-between pt-3 border-t border-gray-800/80 text-xs font-mono">
               <div class="flex items-center gap-3">
                 <button onclick="openPreview('${item.url}', '${encodeURIComponent(item.title)}', '${item.category}')" class="text-gray-300 hover:text-highlightOrange transition flex items-center gap-1">
-                  👁 PREVIEW
+                  <i class="ri-eye-line"></i> PREVIEW
                 </button>
                 <button onclick="openEditModal('${item.id}')" class="text-gray-400 hover:text-highlightOrange transition flex items-center gap-1">
                   <i class="ri-pencil-fill"></i> EDIT
