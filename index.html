@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier Codex — Visual & Motion Inspiration Sanctuary</title>
+<!-- 開頁前先套用已存的主題，避免閃白 -->
+<script>try{document.documentElement.dataset.theme=JSON.parse(localStorage.getItem('ac_theme'))||'dark'}catch(e){}</script>
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Noto+Serif+TC:wght@300;500;700&display=swap');
+
+/* ==========================================================================
+   0. 設計變數（全站顏色、尺寸都從這裡改）
+   --------------------------------------------------------------------------
+   --bg 主背景 | --bg2 背景中心微亮 | --card 卡片/面板 | --fld 輸入框底
+   --tx 文字   | --mu 次要文字     | --ac 點綴色(深=橘/淺=黃)
+   --ac-ink 點綴色文字版(淺色模式用較深黃，確保可讀)
+   --on-ac 點綴色按鈕上的文字 | --sl / --sd 新擬態「亮面 / 暗面」陰影色
+   --glow 手電筒光暈顏色 | --aura 油燈光暈顏色
+   ========================================================================== */
+:root{
+  --fh:54px;               /* 【可調】輸入框統一高度 */
+  --rc:30px;               /* 【可調】卡片圓角大小（squircle） */
+  --ease:cubic-bezier(.16,1,.3,1);
+  --aura-r:150px;          /* 【可調】油燈光暈半徑 */
+  --grain-o:.11;           /* 【可調】顆粒感強度 0~0.3 */
+  color-scheme:dark;
+}
+[data-theme=dark]{
+  --bg:#10151B; --bg2:#161D26; --card:#151C25; --fld:#111820;
+  --tx:#DAD6CC; --mu:#8B939D; --ac:#F0802F; --ac-ink:#F0802F; --on-ac:#10151B;
+  --ln:rgba(255,255,255,.08); --sl:#1A222C; --sd:#0A0E12;
+  --glow:rgba(240,128,47,.26); --aura:rgba(240,128,47,.34);
+}
+[data-theme=light]{
+  --bg:#dbd8d8; --bg2:#e0e0dd; --card:#E7E7E5; --fld:#D8D8D6;
+  --tx:#2B2A28; --mu:#66665F; --ac:#E3B023; --ac-ink:#876300; --on-ac:#2B2A28;
+  --ln:rgba(0,0,0,.1); --sl:#F6F6F6; --sd:#BDBDBD;
+  --glow:rgba(253, 196, 38, 0.34); --aura:rgba(227,176,35,.3);
+  --grain-o:.16; color-scheme:light;
+}
+
+/* ==========================================================================
+   1. 基礎 / 顆粒感（老照片、印刷品質感）
+   --------------------------------------------------------------------------
+   .grain 是蓋在整頁最上層的雜訊：用 SVG feTurbulence 產生灰階噪點，
+   以 overlay 混合 + 低透明度，削弱數位感；pointer-events:none 不影響操作。
+   ========================================================================== */
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg) radial-gradient(110% 70% at 50% 0%,var(--bg2),var(--bg) 70%) fixed;
+  color:var(--tx);font-family:'Noto Serif TC',serif;overflow-x:hidden;
+  transition:background-color .6s,color .6s;
+}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-thumb{background:var(--sd);border-radius:3px}
+:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
+.grain{
+  position:fixed;inset:0;z-index:99;pointer-events:none;opacity:var(--grain-o);mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='.33 .33 .33 0 0 .33 .33 .33 0 0 .33 .33 .33 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ==========================================================================
+   2. 全站按鈕反饋（hover 微縮小、離開恢復、按下更小）
+   用 :where() 讓權重為 0，個別元件可自行覆蓋。
+   ========================================================================== */
+:where(button,.btn){transition:transform .22s var(--ease),box-shadow .25s,background .25s,color .25s,border-color .25s}
+:where(button,.btn):hover{transform:scale(.96)}
+:where(button,.btn):active{transform:scale(.9)}
+
+/* 新擬態按鈕 .nb：與背景同色，左上亮、右下暗；按下變內陰影（音樂鈕、EXPLORE） */
+.nb{
+  background:var(--bg);color:var(--tx);border-radius:999px;padding:12px 22px;
+  display:inline-flex;align-items:center;gap:10px;font-size:.78rem;letter-spacing:.14em;
+  box-shadow:6px 6px 14px var(--sd),-6px -6px 14px var(--sl);
+}
+.nb:active{box-shadow:inset 4px 4px 9px var(--sd),inset -4px -4px 9px var(--sl);transform:scale(.95)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mu)}
+.dot.on{background:var(--ac);animation:ping 1.4s infinite}
+@keyframes ping{50%{box-shadow:0 0 0 6px transparent;opacity:.5}}
+
+/* 主要按鈕 / 小膠囊 */
+.pri{background:var(--ac);color:var(--on-ac);height:var(--fh);padding:0 20px;border-radius:14px;font-weight:700;font-size:.8rem;letter-spacing:.08em;display:inline-flex;align-items:center;gap:6px;box-shadow:0 8px 20px -8px var(--ac)}
+.chip{padding:7px 14px;border-radius:12px;font-size:.78rem;background:var(--fld);border:1px solid var(--ln);color:var(--mu);display:inline-flex;align-items:center;gap:6px}
+.chip.on{background:var(--ac);color:var(--on-ac);border-color:transparent;font-weight:700}
+.chip:not(.on):hover{color:var(--ac-ink)}
+
+/* ==========================================================================
+   3. 頂部右側控制區：音樂鈕 + 油燈（固定、不擋操作）
+   ========================================================================== */
+.ctl{position:fixed;top:18px;right:18px;z-index:50;display:flex;flex-direction:column;align-items:center;gap:0;pointer-events:none}
+.ctl>*{pointer-events:auto}
+.lw{position:relative;width:64px;height:112px;perspective:520px;pointer-events:none}   /* 油燈 3D 透視容器 */
+.aura{                                                                                  /* 油燈光暈 */
+  position:absolute;left:50%;top:78px;width:calc(var(--aura-r)*2);height:calc(var(--aura-r)*2);
+  translate:-50% -50%;border-radius:50%;pointer-events:none;opacity:0;transition:opacity .6s;
+  background:radial-gradient(circle closest-side,var(--aura),transparent);mix-blend-mode:screen;
+}
+.lit~.aura,.lw.lit .aura{opacity:1;animation:breath 3s ease-in-out infinite alternate}
+@keyframes breath{to{opacity:.78}}
+.lamp{position:absolute;left:3px;top:0;width:58px;height:108px;cursor:pointer;transform-origin:50% 0;pointer-events:auto;filter:drop-shadow(0 6px 5px rgba(0,0,0,.35))}
+.lamp svg{width:100%;height:100%;overflow:visible;display:block}
+.lamp .gon{opacity:0;transition:opacity .5s}
+.lamp .flame{opacity:0;transition:opacity .45s}
+.lw.lit .gon,.lw.lit .flame{opacity:1}
+.lw.lit .fl{animation:flick .22s ease-in-out infinite alternate}
+.fl{transform-box:fill-box;transform-origin:50% 100%}
+@keyframes flick{from{transform:scale(.92,.9) skewX(-2deg)}to{transform:scale(1.06,1.08) skewX(2deg)}}
+
+/* ==========================================================================
+   4. 標題舞台（Atelier Codex）＋ 手電筒 ＋ 置頂迷你標題
+   --------------------------------------------------------------------------
+   .ttl      fixed 舞台：JS 依捲動位移＋縮放，最後停在頁首置中
+   .ttl-a    標題層：被光照到的圓形區域「挖空」(mask)
+   .ttl-b    slogan 層：疊在標題正中央，平常看不到，只在光圈內顯示
+   --r       光圈半徑（由 JS 常數 SPOT_R 控制）
+   ========================================================================== */
+.bar{position:fixed;top:0;left:0;right:0;height:58px;z-index:44;opacity:0;pointer-events:none;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--ln)}
+.beam{position:fixed;inset:0;z-index:44;pointer-events:none;--r:0px;--bx:0px;--by:0px;
+  background:radial-gradient(circle calc(var(--r)*1.7 + 1px) at var(--bx) var(--by),var(--glow),transparent);mix-blend-mode:screen}
+[data-theme=light] .beam{mix-blend-mode:normal}
+.ttl{position:fixed;left:50%;top:0;z-index:45;transform-origin:50% 0;white-space:nowrap;cursor:pointer;--r:0px;--mx:0px;--my:0px;--so:1}
+.ttl-a,.ttl-b{
+  -webkit-mask-image:radial-gradient(circle at var(--mx) var(--my),transparent 0,transparent calc(var(--r)*.55),#000 var(--r));
+          mask-image:radial-gradient(circle at var(--mx) var(--my),transparent 0,transparent calc(var(--r)*.55),#000 var(--r));
+}
+.ttl-h{font:800 clamp(2rem,8.5vw,7.5rem)/1.15 'Cinzel',serif;letter-spacing:.06em;padding:0 .1em;user-select:none}
+.ttl-b{
+  position:absolute;inset:0;display:grid;place-items:center;text-align:center;opacity:var(--so);pointer-events:none;
+  font-size:clamp(1rem,2.8vw,2.3rem);line-height:1.55;letter-spacing:.12em;font-weight:500;white-space:normal;
+  -webkit-mask-image:radial-gradient(circle at var(--mx) var(--my),#000 0,#000 calc(var(--r)*.5),transparent var(--r));
+          mask-image:radial-gradient(circle at var(--mx) var(--my),#000 0,#000 calc(var(--r)*.5),transparent var(--r));
+}
+body.torch,body.torch *{cursor:var(--torch,crosshair)!important}   /* 進入標題範圍＝手電筒游標 */
+
+/* ==========================================================================
+   5. Hero 首屏
+   ========================================================================== */
+.hero{position:relative;z-index:10;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;padding:0 20px;text-align:center}
+.badge{font-size:.66rem;letter-spacing:.3em;padding:5px 14px;border-radius:99px;color:var(--ac-ink);border:1px solid color-mix(in srgb,var(--ac) 45%,transparent);background:color-mix(in srgb,var(--ac) 10%,transparent)}
+.hint{position:absolute;bottom:26px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:.6rem;letter-spacing:.3em;color:var(--mu);opacity:.7}
+.hint i{width:1px;height:32px;background:linear-gradient(var(--ac),transparent)}
+
+/* ==========================================================================
+   6. 內容區：滾動顯示動畫 .rv（IntersectionObserver 控制 .in）
+   下滾：從下方浮入；上滾：從上方落入；離開視窗後會重置，可重複播放。
+   ========================================================================== */
+.wrap{position:relative;z-index:10;max-width:1200px;margin:0 auto;padding:84px 20px 100px}
+.rv{opacity:0;transform:translateY(var(--ry,36px));transition:opacity .7s var(--ease),transform .8s var(--ease)}
+.rv.in{opacity:1;transform:none;transition-delay:calc(var(--i,0)*70ms)}
+.panel{background:var(--card);border:1px solid var(--ln);border-radius:28px;corner-shape:squircle;padding:24px;box-shadow:0 18px 40px -22px rgba(0,0,0,.5)}
+.spark{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:center;padding-bottom:22px;border-bottom:1px solid var(--ln)}
+.spark small{font-size:.72rem;color:var(--mu);letter-spacing:.1em}
+.spark p{margin-top:6px;font-style:italic;font-weight:300;line-height:1.7;max-width:70ch}
+.tools{display:flex;flex-direction:column;gap:16px;padding-top:22px}
+.tools-top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.acts{display:flex;gap:12px;align-items:center;flex:1;max-width:420px;min-width:240px}
+.acts .fld{flex:1;min-width:0}
+.bar2{display:flex;justify-content:space-between;align-items:center;margin:26px 4px 18px;font-size:.78rem;color:var(--mu)}
+.bar2 div{display:flex;gap:8px;align-items:center}
+.sq{width:38px;height:34px;border-radius:10px;background:var(--fld);border:1px solid var(--ln);color:var(--mu)}
+.sq.on{color:var(--ac-ink);border-color:var(--ac)}
+@media(max-width:640px){.tools-top{flex-direction:column;align-items:stretch}.acts{max-width:none}}
+
+/* ==========================================================================
+   7. 收藏卡片：squircle 連續曲率圓角 + 翻轉（hover 0.6s）
+   --------------------------------------------------------------------------
+   .cd 外框(透視) > .cd-in 旋轉體 > .cd-f 正面 / .cd-b 反面
+   corner-shape:squircle 為新 CSS 特性；不支援的瀏覽器自動退回一般圓角。
+   觸控裝置沒有 hover：點一下卡片翻面。
+   ========================================================================== */
+.grid{display:grid;gap:22px;grid-template-columns:repeat(auto-fill,minmax(285px,1fr))}
+.cd{height:240px;perspective:1100px}
+.cd-in{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,.2,.2,1)}  /* 【可調】翻轉秒數 */
+@media(hover:hover){.cd:hover .cd-in{transform:rotateY(180deg)}}
+.cd.flip .cd-in,.cd:has(:focus-visible) .cd-in{transform:rotateY(180deg)}
+.cd-f,.cd-b{
+  position:absolute;inset:0;padding:20px;display:flex;flex-direction:column;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  background:var(--card);border:1px solid var(--ln);border-radius:34px;box-shadow:0 16px 34px -20px rgba(0,0,0,.55);
+}
+@supports(corner-shape:squircle){.cd-f,.cd-b{border-radius:var(--rc);corner-shape:squircle}}
+.cd-b{transform:rotateY(180deg)}
+.cd-top{display:flex;justify-content:space-between;align-items:center}
+.cd-top i{color:var(--mu);font-size:1.05rem} .cd-top i.on{color:var(--ac)}
+.tag{font-size:.66rem;padding:3px 10px;border-radius:8px;color:var(--ac-ink);background:color-mix(in srgb,var(--ac) 12%,transparent);border:1px solid color-mix(in srgb,var(--ac) 35%,transparent)}
+.cd-t{margin:auto 0;text-align:center;font:700 1.12rem/1.4 'Cinzel','Noto Serif TC',serif;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cd-d{text-align:center;font-size:.7rem;color:var(--mu);letter-spacing:.12em}
+.cd-t2{font:700 1rem/1.4 'Cinzel','Noto Serif TC',serif;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cd-n{margin-top:8px;font-size:.78rem;line-height:1.65;color:var(--mu);font-weight:300;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cd-tags{margin-top:8px;display:flex;gap:6px;overflow:hidden;white-space:nowrap;font-size:.66rem;color:var(--ac-ink)}
+.cd-tags span{padding:2px 8px;border-radius:7px;background:var(--fld)}
+.cd-act{margin-top:auto;padding-top:12px;border-top:1px solid var(--ln);display:flex;align-items:center;gap:4px}
+.cd-act .sp{flex:1}
+.cd-act button{padding:6px 8px;border-radius:9px;color:var(--mu);font-size:.95rem}
+.cd-act button:hover{color:var(--ac-ink)}
+.cd-act .v{color:var(--ac-ink);font-size:.78rem;display:flex;gap:4px;align-items:center;padding-left:0}
+.cd-act .x:hover{color:#d9534f}
+.empty{grid-column:1/-1;text-align:center;padding:60px 0;color:var(--mu);font-size:.8rem}
+
+/* ==========================================================================
+   8. 浮動標籤輸入框 .fld（所有輸入框統一高度 / 對齊）
+   --------------------------------------------------------------------------
+   結構： <label class="fld"><input placeholder=" "><span>標籤文字</span></label>
+   placeholder 必須保留一個空白，CSS 靠 :placeholder-shown 判斷是否有內容。
+   .tw 為「打字機鏡像層」：真正的輸入文字透明，鏡像層逐字顯示 + 橘色游標。
+   ========================================================================== */
+.fld{position:relative;display:block}
+.fld input,.fld textarea,.fld select{
+  width:100%;height:var(--fh);padding:21px 14px 6px;background:var(--fld);border:1px solid var(--ln);border-radius:14px;
+  color:var(--tx);font:400 .9rem/1.5 'Noto Serif TC',serif;outline:0;transition:border-color .2s,box-shadow .2s;appearance:none;
+}
+.fld select{padding-right:34px;background-image:linear-gradient(45deg,transparent 50%,var(--mu) 50%),linear-gradient(135deg,var(--mu) 50%,transparent 50%);background-position:calc(100% - 18px) 25px,calc(100% - 13px) 25px;background-size:5px 5px;background-repeat:no-repeat}
+.fld textarea{height:104px;padding:26px 14px 8px;resize:none}
+.fld input:focus,.fld textarea:focus,.fld select:focus{border-color:var(--ac);box-shadow:0 0 0 3px color-mix(in srgb,var(--ac) 18%,transparent)}
+.fld>span{position:absolute;left:15px;top:calc(var(--fh)/2);translate:0 -50%;font-size:.85rem;color:var(--mu);pointer-events:none;transition:all .2s var(--ease)}
+.fld textarea~span{top:20px}
+.fld input:focus~span,.fld input:not(:placeholder-shown)~span,
+.fld textarea:focus~span,.fld textarea:not(:placeholder-shown)~span,
+.fld select~span{top:9px;translate:0 0;font-size:.66rem;color:var(--ac-ink)}
+.fld input[data-tw],.fld textarea[data-tw]{color:transparent;caret-color:transparent}
+.fld ::selection{background:var(--glow);color:transparent}
+.tw{position:absolute;inset:0;padding:21px 15px 6px;display:flex;align-items:center;overflow:hidden;white-space:pre;pointer-events:none;font:400 .9rem/1.5 'Noto Serif TC',serif;color:var(--tx);border:1px solid transparent}
+.fld textarea~.tw{align-items:flex-start;padding:26px 15px 8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.cur{display:inline-block;width:2px;height:1.15em;margin-left:1px;vertical-align:text-bottom;background:var(--ac);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.frm{display:grid;grid-template-columns:1fr 1fr;gap:14px}.frm .full{grid-column:1/-1}
+@media(max-width:520px){.frm{grid-template-columns:1fr}}
+
+/* ==========================================================================
+   9. 彈窗 / 提示 / 浮動按鈕 / 頁尾
+   ========================================================================== */
+.ov{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(6,8,10,.72);backdrop-filter:blur(8px);opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
+.ov.on{opacity:1;visibility:visible}
+.md{width:100%;max-width:520px;max-height:92vh;overflow:auto;transform:scale(.92) translateY(14px);transition:transform .35s var(--ease)}
+.ov.on .md{transform:none}
+.md.big{max-width:1000px;height:86vh;display:flex;flex-direction:column;padding:16px}
+.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--ln);font:600 1.05rem 'Cinzel','Noto Serif TC',serif;letter-spacing:.06em}
+.mh button{font-size:1.2rem;color:var(--mu);padding:4px 8px}
+.mf{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--ln)}
+.ghost{padding:0 16px;height:44px;color:var(--mu);border-radius:12px}
+.cl-row{display:flex;justify-content:space-between;align-items:center;background:var(--fld);padding:8px 12px;border-radius:12px;border:1px solid var(--ln);font-size:.85rem}
+.pv{flex:1;border-radius:16px;overflow:hidden;border:1px solid var(--ln);background:#000}.pv iframe{width:100%;height:100%;border:0;background:#fff}
+
+.toasts{position:fixed;top:20px;right:150px;z-index:95;display:flex;flex-direction:column;gap:10px}
+.ts{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:var(--card);border:1px solid var(--ln);box-shadow:0 14px 34px -10px rgba(0,0,0,.6);font-size:.85rem;animation:tin .55s var(--ease)}
+.ts i.ic{color:var(--ac);font-size:1.15rem}.ts button{color:var(--mu);padding:2px 4px}
+.ts.out{animation:tout .55s cubic-bezier(.5,-.4,.6,1) forwards}               /* 3 秒後：先微沉再向上彈出消失 */
+@keyframes tin{from{transform:translateY(-30px) scale(.9);opacity:0}}
+@keyframes tout{25%{transform:translateY(7px)}to{transform:translateY(-150%);opacity:0}}
+@media(max-width:640px){.toasts{top:130px;right:12px;left:12px}}
+
+.fab{position:fixed;right:20px;bottom:calc(20px + var(--lift,0px));z-index:60;pointer-events:none}   /* --lift：頁尾出現時往上推 */
+.fab-b{
+  pointer-events:auto;height:52px;min-width:52px;padding:0 20px;border-radius:99px;display:flex;align-items:center;justify-content:center;
+  background:var(--ac);color:var(--on-ac);font-weight:700;font-size:.78rem;letter-spacing:.08em;white-space:nowrap;
+  box-shadow:0 14px 30px -8px var(--ac);transform:translateY(calc(100% + 50px));opacity:0;
+  transition:transform .7s cubic-bezier(.2,1.25,.3,1),opacity .4s,padding .6s var(--ease);
+}
+.fab-b i{font-size:1.4rem}
+.fab-t{display:inline-block;max-width:140px;margin-left:6px;overflow:hidden;transition:max-width .6s var(--ease),opacity .4s,margin .6s var(--ease)}
+.fab.show .fab-b{transform:none;opacity:1}
+.fab.show .fab-b:hover{transform:scale(.94)}.fab.show .fab-b:active{transform:scale(.88)}
+.fab.mini .fab-b{padding:0}.fab.mini .fab-t{max-width:0;opacity:0;margin-left:0}   /* 文字向右收起，剩下 + 圓鈕 */
+
+.ft{position:relative;z-index:10;border-top:1px solid var(--ln);background:color-mix(in srgb,var(--bg) 90%,transparent);padding:22px 20px 34px;font-size:.78rem;color:var(--mu)}
+.ft>div{max-width:1200px;margin:0 auto}
+.ft-row{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin-top:22px!important}
+.ft b{font:600 .9rem 'Cinzel',serif;letter-spacing:.14em;color:var(--tx)}
+
+@media(prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+<div class="bar" id="bar"></div>
+<div class="beam" id="beam"></div>
+
+<!-- ===== 標題舞台：標題層 + slogan 層（疊在同一位置，光圈處標題消失、slogan 顯現） ===== -->
+<div class="ttl" id="ttl" data-act="top">
+  <div class="ttl-a"><h1 class="ttl-h" id="ttlH">Atelier Codex</h1></div>
+  <div class="ttl-b"><p data-i18n="slogan" data-html></p></div>
+</div>
+
+<!-- ===== 右上：音樂鈕 + 油燈 ===== -->
+<div class="ctl">
+  <button class="nb" id="bgm" data-act="bgm"><span class="dot" id="dot"></span><span id="bgmT"></span></button>
+  <div class="lw lit" id="lw">
+    <div class="lamp" id="lamp" role="button" tabindex="0" data-i18n-aria="lampAria">
+      <svg viewBox="0 0 80 150" aria-hidden="true">
+        <defs>
+          <linearGradient id="gBz" x1="0" x2="1"><stop offset="0" stop-color="#9c7448"/><stop offset=".5" stop-color="#5f4228"/><stop offset="1" stop-color="#2f2013"/></linearGradient>
+          <radialGradient id="gOn" cx=".5" cy=".62" r=".62"><stop offset="0" stop-color="#fff2b8"/><stop offset=".45" stop-color="#ffb347"/><stop offset="1" stop-color="#c6661a"/></radialGradient>
+          <linearGradient id="gOff" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a4f55" stop-opacity=".8"/><stop offset="1" stop-color="#1c2025" stop-opacity=".92"/></linearGradient>
+        </defs>
+        <path d="M40 0V38" stroke="#6b4c2f" stroke-width="1.6"/>
+        <path d="M18 80C14 26 66 26 62 80" fill="none" stroke="url(#gBz)" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M18 80C12 100 13 114 24 124M62 80C68 100 67 114 56 124" fill="none" stroke="url(#gBz)" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="40" cy="44" r="4" fill="none" stroke="#6b4c2f" stroke-width="1.6"/>
+        <path d="M25 56Q40 43 55 56Z" fill="url(#gBz)"/>
+        <rect x="27" y="56" width="26" height="7" rx="1.5" fill="url(#gBz)"/>
+        <rect x="31" y="63" width="18" height="17" fill="url(#gBz)"/>
+        <g fill="#1a1109"><circle cx="36" cy="72" r="1.2"/><circle cx="40" cy="72" r="1.2"/><circle cx="44" cy="72" r="1.2"/></g>
+        <path d="M22 80H58L54 86H26Z" fill="url(#gBz)"/>
+        <path d="M27 88C22 94 22 112 28 120H52C58 112 58 94 53 88Z" fill="url(#gOff)"/>
+        <path class="gon" d="M27 88C22 94 22 112 28 120H52C58 112 58 94 53 88Z" fill="url(#gOn)"/>
+        <g class="flame"><path class="fl" d="M40 113C33 106 36 99 40 91C44 99 47 106 40 113Z" fill="#fff6d0"/></g>
+        <path d="M27 90L53 118M53 90L27 118" stroke="#3b2a1b" stroke-width="1.1"/>
+        <path d="M22 120H58L62 128V140Q40 147 18 140V128Z" fill="url(#gBz)"/>
+        <ellipse cx="40" cy="124" rx="9" ry="2.6" fill="#2f2013"/>
+      </svg>
+    </div>
+    <div class="aura"></div>
+  </div>
+</div>
+
+<!-- ===== Hero ===== -->
+<header class="hero" id="hero">
+  <span class="badge" data-i18n="badge"></span>
+  <div id="sp"></div>   <!-- 佔位：標題舞台初始位置 -->
+  <button class="nb" data-act="go" style="padding:16px 32px"><span class="dot on"></span><span data-i18n="explore"></span><i class="ri-arrow-down-line"></i></button>
+  <div class="hint"><span data-i18n="scroll"></span><i></i></div>
+</header>
+
+<!-- ===== 主內容 ===== -->
+<main class="wrap" id="main">
+  <section class="panel rv">
+    <div class="spark">
+      <div><small id="sparkT"></small><p id="sparkP"></p></div>
+      <button class="chip" data-act="spark"><i class="ri-bookmark-fill"></i><span data-i18n="saveSpark"></span></button>
+    </div>
+    <div class="tools">
+      <div class="tools-top">
+        <button class="chip" data-act="manage"><i class="ri-folder-add-line"></i><span data-i18n="manage"></span></button>
+        <div class="acts">
+          <label class="fld"><input id="q" placeholder=" " autocomplete="off"><span data-i18n="search"></span></label>
+          <button class="pri" id="add" data-act="add"><i class="ri-add-line"></i><span data-i18n="add"></span></button>
+        </div>
+      </div>
+      <div class="tabs" id="tabs"></div>
+    </div>
+  </section>
+
+  <div class="bar2 rv">
+    <span id="cnt"></span>
+    <div><span data-i18n="sort"></span>
+      <button class="sq on" data-act="sort" data-id="az"><i class="ri-sort-alphabet-asc"></i></button>
+      <button class="sq" data-act="sort" data-id="za"><i class="ri-sort-alphabet-desc"></i></button>
+    </div>
+  </div>
+  <section class="grid" id="grid"></section>
+</main>
+
+<!-- ===== 頁尾（語言切換在左上） ===== -->
+<footer class="ft" id="ft">
+  <div><button class="chip" data-act="lang"><i class="ri-translate-2"></i><span id="langT"></span></button></div>
+  <div class="ft-row">
+    <b>✦ ATELIER CODEX © 2026</b>
+    <span data-i18n="foot"></span>
+    <button data-act="top" class="chip"><i class="ri-arrow-up-line"></i><span data-i18n="top"></span></button>
+  </div>
+</footer>
+
+<!-- ===== 右下浮動新增鈕 ===== -->
+<div class="fab" id="fab"><button class="fab-b" data-act="add" data-i18n-aria="add"><i class="ri-add-line"></i><span class="fab-t" data-i18n="add"></span></button></div>
+
+<!-- ===== 輕提示容器 ===== -->
+<div class="toasts" id="toasts"></div>
+
+<!-- ===== 新增 / 編輯 ===== -->
+<div class="ov" id="ovForm"><div class="md panel">
+  <div class="mh"><span id="mT"></span><button data-act="close"><i class="ri-close-line"></i></button></div>
+  <form id="form" class="frm">
+    <input type="hidden" id="fId">
+    <label class="fld full"><input id="fTit" required placeholder=" "><span data-i18n="fTit"></span></label>
+    <label class="fld full"><input id="fUrl" type="url" required placeholder=" "><span data-i18n="fUrl"></span></label>
+    <label class="fld"><select id="fCat"></select><span data-i18n="fCat"></span></label>
+    <label class="fld"><input id="fTag" placeholder=" "><span data-i18n="fTag"></span></label>
+    <label class="fld full"><textarea id="fNote" placeholder=" "></textarea><span data-i18n="fNote"></span></label>
+    <div class="mf full"><button type="button" class="ghost" data-act="close" data-i18n="cancel"></button><button type="submit" class="pri" id="fOk"></button></div>
+  </form>
+</div></div>
+
+<!-- ===== 分類管理（點外側關閉） ===== -->
+<div class="ov" id="ovCat" data-out><div class="md panel" style="max-width:440px">
+  <div class="mh"><span data-i18n="mTitle"></span><button data-act="close"><i class="ri-close-line"></i></button></div>
+  <div style="display:flex;gap:10px;margin-bottom:14px"><label class="fld" style="flex:1"><input id="nc" placeholder=" "><span data-i18n="mNew"></span></label><button class="pri" data-act="madd" data-i18n="mAdd"></button></div>
+  <div id="cl" style="display:grid;gap:8px;max-height:240px;overflow:auto"></div>
+  <div class="mf"><button class="pri" data-act="close" data-i18n="done"></button></div>
+</div></div>
+
+<!-- ===== 內嵌預覽（點外側關閉） ===== -->
+<div class="ov" id="ovPrev" data-out><div class="md big panel">
+  <div class="mh" style="margin-bottom:12px">
+    <span style="display:flex;gap:10px;align-items:center;min-width:0"><span class="tag" id="pCat"></span><span id="pTit" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span></span>
+    <span style="display:flex;gap:6px;align-items:center"><a class="chip btn" id="pLink" target="_blank" rel="noopener" style="text-decoration:none"><span data-i18n="openNew"></span> ↗</a><button data-act="close"><i class="ri-close-line"></i></button></span>
+  </div>
+  <div class="pv"><iframe id="pf"></iframe></div>
+</div></div>
+
+<script>
+/* ==========================================================================
+   JS 功能索引（每段上方都有說明；可調參數集中在【設定區】）
+   1 設定區  2 多語言 I18N  3 資料/儲存  4 小工具  5 渲染(分類/卡片)
+   6 動作表 ACT  7 彈窗  8 打字機輸入框  9 標題/手電筒/捲動  10 滾動顯示
+   11 浮動按鈕  12 輕提示  13 音樂  14 油燈物理 + 主題切換  15 初始化
+   ========================================================================== */
+
+/* ---------- 1. 設定區（想微調就改這裡） ---------- */
+const SPOT_R=150;          // 【手電筒光暈半徑 px】數字越大光圈越大
+const SPOT_PAD=45;         // 手電筒觸發範圍：標題外擴 px
+const TITLE_DIST=.55;      // 標題從中央移到頁首所需的捲動距離（螢幕高度倍數）
+const TITLE_MINI_PX=22;    // 置頂後標題字級 px
+const TW_MS=60;            // 【打字機】每字間隔 ms
+const TOAST_MS=3000;       // 輕提示停留時間 ms
+const FAB_MINI_MS=900;     // 浮動鈕出現後，文字收起的延遲 ms
+const THEME_MS=900;        // 主題擴散動畫時間 ms
+const LAMP={k:90,c:2.4,push:7,max:38,vmax:420}; // 油燈：k彈性 c阻尼 push撥動力道 max最大擺角 vmax最大角速度
+const AUDIO_URL='https://actions.google.com/sounds/v1/ambiences/rain_heavy.ogg'; // 背景音樂來源，可換成自己的
+
+/* ---------- 2. 多語言（之後只要改這張表） ----------
+   data-i18n="key" 的元素會自動換字；函式型的值可帶參數（如 count）。 */
+const I18N={
+ zh:{
+  slogan:'拾起碎片，<br>編織宇宙。', badge:'第一卷 — 創作聖所', explore:'探索典藏', scroll:'向下滑動進入典藏庫',
+  saveSpark:'收藏今日靈感', manage:'管理分類', all:'全部', marked:'已標註', search:'搜尋標題、標籤、筆記', add:'新增收藏',
+  sort:'排序', count:n=>`顯示項目：${n} 筆`, empty:'沒有找到符合條件的收藏項目', noNote:'無備註說明',
+  view:'查看', edit:'修改', del:'刪除', mark:'標註', unmark:'取消標註',
+  newTitle:'✦ 新增收藏', editTitle:'✦ 修改收藏', fTit:'標題 / 名稱', fUrl:'網址', fCat:'分類', fTag:'標籤（逗號分隔）', fNote:'備註 / 重點',
+  cancel:'取消', save:'儲存收藏', update:'確認修改', mTitle:'✦ 管理分類', mNew:'新分類名稱', mAdd:'新增', done:'完成',
+  openNew:'在新分頁開啟', foot:'為網頁、動畫與遊戲創作者打造的靈感收集所。', top:'回到頂部',
+  deleted:'已刪除', saved:'已儲存', sparked:'已加入收藏', catDeleted:'分類已刪除', on:'播放中', off:'靜音', lampAria:'切換深色 / 淺色模式',
+  sparkItem:'靈感收藏：', sparkHead:t=>`每日靈感 — 【${t}】`,
+  sparks:[
+   {type:'網頁動態技巧',text:'善用 Scroll-Driven Animations，讓縮放與旋轉直接綁定滾動進度，創造沉浸式敘事。'},
+   {type:'遊戲開發思維',text:'打擊感的核心在於「相機震動 + 停格 + 殘影」的協同。'},
+   {type:'色彩美學指南',text:'深色基底搭配極少量暖橘作為焦點，能引導視線直達重點。'},
+   {type:'網頁效能優化',text:'做粒子背景時，視窗不可見就暫停 requestAnimationFrame 以降低耗能。'},
+   {type:'動畫緩動曲線',text:'cubic-bezier(0.16, 1, 0.3, 1) 能呈現絲滑加速與緩停的高級感。'},
+   {type:'排版與格線系統',text:'大膽粗體、不對稱留白與高反差線條，能加強視覺張力。'},
+   {type:'社群靈感收藏',text:'看到優秀的 UI 動態時，立即截圖並記錄前 3 秒的視覺誘因。'}]
+ },
+ en:{
+  slogan:'Collecting the fragments,<br>composing the universe.', badge:'VOL. 01 — CREATIVE SANCTUARY', explore:'EXPLORE ARCHIVE', scroll:'SCROLL DOWN FOR VAULT',
+  saveSpark:"Save today's spark", manage:'Manage', all:'ALL', marked:'Bookmarked', search:'Search title, tags, notes', add:'ADD ITEM',
+  sort:'Sort', count:n=>`${n} item${n===1?'':'s'}`, empty:'No matching items found', noNote:'No notes',
+  view:'View', edit:'Edit', del:'Delete', mark:'Bookmark', unmark:'Remove bookmark',
+  newTitle:'✦ NEW ITEM', editTitle:'✦ EDIT ITEM', fTit:'Title', fUrl:'URL', fCat:'Category', fTag:'Tags (comma separated)', fNote:'Notes',
+  cancel:'Cancel', save:'Save item', update:'Save changes', mTitle:'✦ MANAGE CATEGORIES', mNew:'New category', mAdd:'Add', done:'Done',
+  openNew:'Open in new tab', foot:'An inspiration vault for web, motion and game makers.', top:'Back to top',
+  deleted:'Deleted', saved:'Saved', sparked:'Added to archive', catDeleted:'Category deleted', on:'ON', off:'OFF', lampAria:'Toggle dark / light mode',
+  sparkItem:'Spark: ', sparkHead:t=>`Daily spark — [ ${t} ]`,
+  sparks:[
+   {type:'Web motion',text:'Bind scale and rotation to scroll progress with Scroll-Driven Animations for immersive storytelling.'},
+   {type:'Game feel',text:'Hit feel comes from screen shake, hitstop and afterimages working together.'},
+   {type:'Color',text:'A dark base with a small dose of warm orange guides the eye straight to the focus.'},
+   {type:'Performance',text:'Pause requestAnimationFrame when a particle background is not visible.'},
+   {type:'Easing',text:'cubic-bezier(0.16, 1, 0.3, 1) gives a silky start and a soft landing.'},
+   {type:'Layout',text:'Bold type, asymmetric whitespace and high-contrast lines add visual tension.'},
+   {type:'Collecting',text:'When you see great UI motion, screenshot it and note the first three seconds of its hook.'}]
+ }
+};
+let lang=JSON.parse(localStorage.getItem('ac_lang')||'"zh"');
+const t=(k,...a)=>{const v=I18N[lang][k];return typeof v==='function'?v(...a):v};
+
+/* ---------- 3. 資料 / 儲存（localStorage，相容舊版 spark_archive_* 資料） ---------- */
+const LS={get:(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch{return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+const SEED=[
+ {id:'1',title:'ShaderToy — Realtime GLSL Shaders',url:'https://www.shadertoy.com',category:'Web Design',tags:['glsl','shaders','3d'],note:'學習光線追蹤 (Raymarching) 與雜訊 (Noise) 演算法的最佳平台。',date:'2026-11-01',bookmarked:true},
+ {id:'2',title:'Awwwards — Site of the Day',url:'https://www.awwwards.com',category:'Web Design',tags:['inspiration','ui/ux','award'],note:'觀摩世界頂級網頁動畫與三維佈局互動。',date:'2026-11-02',bookmarked:false},
+ {id:'3',title:'Instagram Creative Post',url:'https://www.instagram.com/p/C_sample/',category:'Social Posts',tags:['ig','排版'],note:'非常吸引人的對角線視覺構圖與色彩搭配。',date:'2026-11-03',bookmarked:false},
+ {id:'4',title:'Threads 靈感討論區',url:'https://www.threads.net/@sample',category:'Social Posts',tags:['threads','獨立遊戲'],note:'關於獨立遊戲 Hitstop 打擊感處理的深度討論。',date:'2026-11-04',bookmarked:true}];
+const DEF_CATS=['Web Design','3D Modeling','Game Dev','Animation','Asset Space','Social Posts','Tutorials','Misc'];
+let cats=LS.get('ac_cats',LS.get('spark_archive_categories',DEF_CATS));
+let items=LS.get('ac_items',LS.get('spark_archive_items',SEED));
+let cur='ALL',order='az';
+const saveItems=()=>{LS.set('ac_items',items);renderGrid()};
+const saveCats=()=>LS.set('ac_cats',cats);
+
+/* ---------- 4. 小工具 ---------- */
+const $=id=>document.getElementById(id);
+const root=document.documentElement;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const ease=x=>x*x*(3-2*x);
+const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+// 手電筒游標（SVG 動態產生，熱點在燈頭）
+root.style.setProperty('--torch',`url("data:image/svg+xml,${encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'><g transform='rotate(-45 18 18)'><path d='M10 8h16l-3-6H13z' fill='#F0802F'/><rect x='13' y='8' width='10' height='24' rx='3' fill='#2b2f36' stroke='#F0802F' stroke-width='1.4'/></g></svg>")}") 8 8,crosshair`);
+
+/* ---------- 5. 渲染：分類列 / 卡片 ---------- */
+// 第二排分類清單：ALL、已標註、使用者分類（迴圈產生）
+function renderTabs(){
+  $('tabs').innerHTML=[['ALL',t('all')],['Bookmarked','♥ '+t('marked')],...cats.map(c=>[c,c])]
+    .map(([v,l])=>`<button class="chip${cur===v?' on':''}" data-act="cat" data-id="${esc(v)}">${esc(l)}</button>`).join('');
+}
+// 卡片：正面(標題置中/分類/標註圖示/日期)、反面(標題左上/備註/#標籤/功能鈕)
+const cardHTML=(it,i)=>`
+<article class="cd rv" style="--i:${i%3}" tabindex="0">
+ <div class="cd-in">
+  <div class="cd-f">
+   <div class="cd-top"><span class="tag">${esc(it.category)}</span><i class="${it.bookmarked?'ri-heart-fill on':'ri-heart-line'}"></i></div>
+   <h4 class="cd-t">${esc(it.title)}</h4><time class="cd-d">${esc(it.date)}</time>
+  </div>
+  <div class="cd-b">
+   <h4 class="cd-t2">${esc(it.title)}</h4>
+   <p class="cd-n">${esc(it.note)||t('noNote')}</p>
+   <div class="cd-tags">${(it.tags||[]).map(x=>`<span>#${esc(x)}</span>`).join('')}</div>
+   <div class="cd-act">
+    <button class="v" data-act="view" data-id="${it.id}"><i class="ri-expand-diagonal-line"></i>${t('view')}</button><span class="sp"></span>
+    <button data-act="mark" data-id="${it.id}" title="${t(it.bookmarked?'unmark':'mark')}"><i class="${it.bookmarked?'ri-heart-fill':'ri-heart-add-line'}" style="${it.bookmarked?'color:var(--ac)':''}"></i></button>
+    <button data-act="edit" data-id="${it.id}" title="${t('edit')}"><i class="ri-edit-line"></i></button>
+    <button class="x" data-act="del" data-id="${it.id}" title="${t('del')}"><i class="ri-delete-bin-6-line"></i></button>
+   </div>
+  </div>
+ </div>
+</article>`;
+function renderGrid(){
+  const kw=$('q').value.toLowerCase();
+  const list=items.filter(it=>
+    (cur==='ALL'||(cur==='Bookmarked'?it.bookmarked:it.category===cur))&&
+    [it.title,it.note,...(it.tags||[])].some(s=>String(s||'').toLowerCase().includes(kw)))
+   .sort((a,b)=>a.title.localeCompare(b.title,'zh-Hant')*(order==='az'?1:-1));
+  $('cnt').textContent=t('count',list.length);
+  $('grid').innerHTML=list.length?list.map(cardHTML).join(''):`<p class="empty">${t('empty')}</p>`;
+  $('grid').querySelectorAll('.rv').forEach(el=>io.observe(el));
+}
+function renderSpark(){
+  const day=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,0))/864e5);
+  const s=I18N[lang].sparks[day%I18N[lang].sparks.length];
+  $('sparkT').textContent=t('sparkHead',s.type);$('sparkP').textContent=`"${s.text}"`;return s;
+}
+
+/* ---------- 6. 動作表：所有按鈕用 data-act="名稱" 統一分派（事件委派，省事件綁定） ---------- */
+const ACT={
+ add:()=>openForm(), edit:id=>openForm(id), view:id=>openPreview(id),
+ del:id=>{items=items.filter(i=>i.id!==id);saveItems();toast('deleted','ri-delete-bin-6-line')},   // 不再彈確認，改輕提示
+ mark:id=>{const i=items.find(x=>x.id===id);i.bookmarked=!i.bookmarked;saveItems()},
+ cat:v=>{cur=v;renderTabs();renderGrid()},
+ sort:(v,b)=>{order=v;document.querySelectorAll('.sq').forEach(x=>x.classList.toggle('on',x===b));renderGrid()},
+ manage:()=>{renderCatList();openOv('ovCat')},
+ madd:()=>{const v=$('nc').value.trim();if(v&&!cats.includes(v)){cats.push(v);setVal($('nc'),'');saveCats();renderCatList();renderTabs()}},
+ mdel:i=>{const c=cats.splice(+i,1)[0];if(cur===c)cur='ALL';saveCats();renderCatList();renderTabs();renderGrid();toast('catDeleted','ri-delete-bin-6-line')},
+ mup:i=>moveCat(+i,-1), mdown:i=>moveCat(+i,1),
+ close:(_,b)=>closeOv(b.closest('.ov')),
+ go:()=>scrollTo({top:$('main').offsetTop-60,behavior:'smooth'}),
+ top:()=>scrollTo({top:0,behavior:'smooth'}),
+ bgm:()=>toggleAudio(),
+ lang:()=>{lang=lang==='zh'?'en':'zh';LS.set('ac_lang',lang);applyLang()},
+ spark:()=>{const s=renderSpark();items.unshift({id:Date.now()+'',title:t('sparkItem')+s.type,url:location.href,category:cats[0]||'Misc',tags:['daily','spark'],note:s.text,date:new Date().toISOString().slice(0,10),bookmarked:true});saveItems();toast('sparked','ri-bookmark-fill')}
+};
+function moveCat(i,d){const j=i+d;if(j<0||j>=cats.length)return;[cats[i],cats[j]]=[cats[j],cats[i]];saveCats();renderCatList();renderTabs()}
+function renderCatList(){
+  $('cl').innerHTML=cats.map((c,i)=>`<div class="cl-row"><span>${esc(c)}</span><span>
+   ${i?`<button data-act="mup" data-id="${i}">▲</button>`:''}${i<cats.length-1?`<button data-act="mdown" data-id="${i}">▼</button>`:''}
+   <button data-act="mdel" data-id="${i}"><i class="ri-delete-bin-6-line"></i></button></span></div>`).join('');
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');
+  if(b)ACT[b.dataset.act]?.(b.dataset.id,b,e);
+  // 點到彈窗外側（有 data-out 的）收合關閉
+  if(e.target.classList.contains('ov')&&e.target.hasAttribute('data-out'))closeOv(e.target);
+  // 觸控裝置：點卡片翻面
+  const cd=e.target.closest('.cd');
+  if(cd&&!e.target.closest('button')&&matchMedia('(hover:none)').matches){
+    document.querySelectorAll('.cd.flip').forEach(c=>c!==cd&&c.classList.remove('flip'));cd.classList.toggle('flip');
+  }
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.ov.on').forEach(closeOv)});
+
+/* ---------- 7. 彈窗 ---------- */
+const openOv=id=>$(id).classList.add('on');
+const closeOv=el=>{el.classList.remove('on');if(el.id==='ovPrev')setTimeout(()=>$('pf').removeAttribute('src'),350)};
+function openForm(id){
+  const it=id&&items.find(x=>x.id===id);
+  $('mT').textContent=t(it?'editTitle':'newTitle');$('fOk').textContent=t(it?'update':'save');
+  $('fCat').innerHTML=cats.map(c=>`<option>${esc(c)}</option>`).join('');
+  $('fId').value=it?it.id:'';
+  $('fCat').value=it?it.category:cats[0];
+  setVal($('fTit'),it?it.title:'');setVal($('fUrl'),it?it.url:'');
+  setVal($('fTag'),it?(it.tags||[]).join(', '):'');setVal($('fNote'),it?it.note||'':'');
+  openOv('ovForm');
+}
+$('form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const id=$('fId').value,v=k=>$(k).value.trim();
+  const data={title:v('fTit'),url:v('fUrl'),category:$('fCat').value,note:v('fNote'),tags:v('fTag').split(',').map(s=>s.trim()).filter(Boolean)};
+  if(id)items=items.map(i=>i.id===id?{...i,...data}:i);
+  else items.unshift({id:Date.now()+'',...data,date:new Date().toISOString().slice(0,10),bookmarked:false});
+  saveItems();closeOv($('ovForm'));toast('saved','ri-checkbox-circle-fill');
+});
+function openPreview(id){
+  const it=items.find(x=>x.id===id);if(!it)return;
+  $('pTit').textContent=it.title;$('pCat').textContent=it.category;$('pLink').href=it.url;$('pf').src=it.url;openOv('ovPrev');
+}
+
+/* ---------- 8. 打字機輸入框 ----------
+   原理：真實 input 文字透明；.tw 鏡像層以 TW_MS 間隔逐字顯示，末尾保留橘色閃爍游標。
+   中文輸入法組字中(isComposing)會即時顯示，避免看不到注音/拼音。 */
+function twInit(){
+  document.querySelectorAll('.fld input:not([type=hidden]),.fld textarea').forEach(el=>{
+    const m=document.createElement('i');m.className='tw';el.after(m);el.dataset.tw='';el._tw={m,n:el.value.length,id:0};
+    el.addEventListener('input',e=>twType(el,e.isComposing));
+    el.addEventListener('compositionend',()=>twType(el,true));
+    ['focus','blur'].forEach(ev=>el.addEventListener(ev,()=>twDraw(el)));
+  });
+}
+function twDraw(el){
+  const s=el._tw;
+  s.m.innerHTML=`<span>${esc(el.value.slice(0,s.n))}${document.activeElement===el?'<b class="cur"></b>':''}</span>`;
+  s.m.scrollLeft=s.m.scrollWidth;s.m.scrollTop=s.m.scrollHeight;
+}
+function twType(el,instant){
+  const s=el._tw;clearInterval(s.id);
+  if(instant||el.value.length<=s.n){s.n=el.value.length;twDraw(el);return}
+  s.id=setInterval(()=>{s.n++;twDraw(el);if(s.n>=el.value.length)clearInterval(s.id)},TW_MS);
+}
+function setVal(el,v){el.value=v;el._tw.n=0;twType(el)}      // 程式帶入文字時，也用打字機逐字打出
+$('q').addEventListener('input',renderGrid);
+
+/* ---------- 9. 標題舞台：手電筒 + 捲動置頂 ----------
+   捲動時：標題從中央平滑縮小並停在頁首置中；回捲則回到原位。
+   滑鼠進入標題範圍：游標變手電筒，光圈內標題消失、顯現 slogan。 */
+const ttl=$('ttl'),bar=$('bar'),beam=$('beam'),sp=$('sp');
+const spot={r:0,tr:0,in:false,x:0,y:0,cx:0,cy:0};
+let ty0=0,s1=.2,cv=0,run=false;const TY1=16;
+function measure(){
+  sp.style.height=ttl.offsetHeight+'px';
+  ty0=sp.getBoundingClientRect().top+scrollY;
+  s1=Math.min(1,TITLE_MINI_PX/parseFloat(getComputedStyle($('ttlH')).fontSize));
+  kick();
+}
+function kick(){if(!run){run=true;requestAnimationFrame(frame)}}
+function frame(){
+  const tgt=ease(clamp(scrollY/(innerHeight*TITLE_DIST),0,1));
+  cv+=(tgt-cv)*.14;if(Math.abs(tgt-cv)<.0005)cv=tgt;
+  ttl.style.transform=`translate(-50%,${ty0+(TY1-ty0)*cv}px) scale(${1+(s1-1)*cv})`;
+  ttl.style.setProperty('--so',Math.max(0,1-cv*2.2));      // 置頂後 slogan 淡出
+  bar.style.opacity=cv;
+  spot.tr=spot.in&&cv<.04?SPOT_R:0;
+  spot.r+=(spot.tr-spot.r)*.18;if(Math.abs(spot.tr-spot.r)<.5)spot.r=spot.tr;
+  ttl.style.setProperty('--r',spot.r+'px');ttl.style.setProperty('--mx',spot.x+'px');ttl.style.setProperty('--my',spot.y+'px');
+  beam.style.setProperty('--r',spot.r+'px');beam.style.setProperty('--bx',spot.cx+'px');beam.style.setProperty('--by',spot.cy+'px');
+  if(cv!==tgt||spot.r!==spot.tr)requestAnimationFrame(frame);else run=false;
+}
+addEventListener('pointermove',e=>{
+  const b=ttl.getBoundingClientRect();
+  spot.in=cv<.04&&e.clientX>b.left-SPOT_PAD&&e.clientX<b.right+SPOT_PAD&&e.clientY>b.top-SPOT_PAD&&e.clientY<b.bottom+SPOT_PAD;
+  spot.x=e.clientX-b.left;spot.y=e.clientY-b.top;spot.cx=e.clientX;spot.cy=e.clientY;
+  document.body.classList.toggle('torch',spot.in);kick();
+},{passive:true});
+document.addEventListener('mouseleave',()=>{spot.in=false;document.body.classList.remove('torch');kick()});
+
+/* ---------- 10. 滾動顯示動畫（下滾上浮、上滾下落，可重複播放） ---------- */
+const io=new IntersectionObserver(es=>es.forEach(e=>{
+  const el=e.target;
+  if(e.isIntersecting)el.classList.add('in');
+  else{el.style.setProperty('--ry',e.boundingClientRect.top<0?'-36px':'36px');el.classList.remove('in')}
+}),{threshold:.08,rootMargin:'0px 0px -6% 0px'});
+
+/* ---------- 11. 浮動新增鈕：+ADD ITEM 從上方離開才出現；頁尾出現時被往上推 ---------- */
+const fab=$('fab');let fabOn=false,fabT=0;
+function fabCheck(){
+  const on=$('add').getBoundingClientRect().bottom<0;
+  if(on!==fabOn){
+    fabOn=on;fab.classList.toggle('show',on);clearTimeout(fabT);
+    if(on){fab.classList.remove('mini');fabT=setTimeout(()=>fab.classList.add('mini'),FAB_MINI_MS)}
+  }
+  fab.style.setProperty('--lift',Math.max(0,innerHeight-$('ft').getBoundingClientRect().top)+'px');
+}
+let tick=false;
+addEventListener('scroll',()=>{kick();if(!tick){tick=true;requestAnimationFrame(()=>{tick=false;fabCheck()})}},{passive:true});
+addEventListener('resize',()=>{measure();fabCheck()});
+
+/* ---------- 12. 輕提示：右上角彈出，3 秒後向上彈跳消失 ---------- */
+function toast(key,icon='ri-checkbox-circle-fill'){
+  const el=document.createElement('div');el.className='ts';
+  el.innerHTML=`<i class="ic ${icon}"></i><span>${t(key)}</span><button aria-label="close"><i class="ri-close-line"></i></button>`;
+  const out=()=>{if(el.classList.contains('out'))return;el.classList.add('out');el.addEventListener('animationend',()=>el.remove(),{once:true})};
+  el.querySelector('button').onclick=out;$('toasts').append(el);setTimeout(out,TOAST_MS);
+}
+
+/* ---------- 13. 音樂 ---------- */
+let audio=null,playing=false;
+function bgmUI(){$('dot').classList.toggle('on',playing);$('bgmT').innerHTML=`<i class="${playing?'ri-volume-up-fill':'ri-volume-mute-fill'}"></i> ${t(playing?'on':'off')}`}
+function toggleAudio(){
+  if(!audio){audio=new Audio(AUDIO_URL);audio.loop=true}
+  playing=!playing;playing?audio.play().catch(()=>{}):audio.pause();bgmUI();
+}
+
+/* ---------- 14. 油燈：3D 物理擺盪 + 主題切換 ----------
+   a=[rotateX,rotateY,rotateZ] 角度，v=角速度。滑鼠「移動速度」只給推力(impulse)，
+   彈簧+阻尼自然擺盪，不會黏著滑鼠。X/Y/Z 彈性略不同 → 產生立體的橢圓擺動。 */
+const lamp=$('lamp'),lw=$('lw');
+const lp={a:[0,0,0],v:[0,0,0],on:false,t:0,k:[LAMP.k*.92,LAMP.k*.5,LAMP.k]};
+function kickLamp(dx,dy){
+  lp.v[2]-=dx*LAMP.push;lp.v[0]-=dy*LAMP.push*.8;lp.v[1]+=dx*LAMP.push*.35;
+  lp.v=lp.v.map(v=>clamp(v,-LAMP.vmax,LAMP.vmax));
+  if(!lp.on){lp.on=true;lp.t=performance.now();requestAnimationFrame(lampStep)}
+}
+function lampStep(now){
+  const dt=Math.min(.033,(now-lp.t)/1000);lp.t=now;
+  for(let i=0;i<3;i++){
+    lp.v[i]+=(-lp.k[i]*lp.a[i]-LAMP.c*lp.v[i])*dt;
+    lp.a[i]=clamp(lp.a[i]+lp.v[i]*dt,-LAMP.max,LAMP.max);
+  }
+  lamp.style.transform=`rotateX(${lp.a[0]}deg) rotateY(${lp.a[1]}deg) rotateZ(${lp.a[2]}deg)`;
+  const e=lp.a.reduce((s,x)=>s+Math.abs(x),0)+lp.v.reduce((s,x)=>s+Math.abs(x),0);
+  if(e>.08)requestAnimationFrame(lampStep);else{lp.on=false;lamp.style.transform=''}
+}
+let lx=0,ly=0;
+lamp.addEventListener('pointermove',e=>{
+  const dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;
+  if(Math.abs(dx)+Math.abs(dy)>1&&Math.abs(dx)+Math.abs(dy)<80)kickLamp(dx,dy);
+});
+lamp.addEventListener('pointerenter',e=>{lx=e.clientX;ly=e.clientY});
+
+// 主題切換：從油燈中心以圓形擴散到全螢幕（View Transitions API，不支援時退回淡入淡出）
+function setTheme(next,x,y){
+  const apply=()=>{root.dataset.theme=next;LS.set('ac_theme',next)};
+  if(!document.startViewTransition||reduced){apply();return Promise.resolve()}
+  const vt=document.startViewTransition(apply);
+  vt.ready.then(()=>{
+    const r=Math.hypot(Math.max(x,innerWidth-x),Math.max(y,innerHeight-y));
+    root.animate({clipPath:[`circle(0px at ${x}px ${y}px)`,`circle(${r}px at ${x}px ${y}px)`]},
+      {duration:THEME_MS,easing:'cubic-bezier(.4,0,.2,1)',pseudoElement:'::view-transition-new(root)'});
+  });
+  return vt.finished;
+}
+let busy=false;
+async function toggleTheme(){
+  if(busy)return;busy=true;
+  const next=root.dataset.theme==='dark'?'light':'dark';
+  kickLamp((Math.random()-.5)*28,(Math.random()-.5)*16);      // 點擊：燈被撞得擺盪
+  lw.classList.toggle('lit',next==='dark');                   // 先熄滅 / 點亮燈焰與光暈
+  await sleep(reduced?0:480);
+  const r=lamp.getBoundingClientRect();
+  await setTheme(next,r.left+r.width/2,r.top+r.height*.66);
+  busy=false;
+}
+lamp.addEventListener('click',toggleTheme);
+lamp.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleTheme()}});
+
+/* ---------- 15. 套用語言 / 初始化 ---------- */
+function applyLang(){
+  root.lang=lang==='zh'?'zh-TW':'en';
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const v=t(el.dataset.i18n);el.hasAttribute('data-html')?el.innerHTML=v:el.textContent=v});
+  document.querySelectorAll('[data-i18n-aria]').forEach(el=>el.setAttribute('aria-label',t(el.dataset.i18nAria)));
+  $('langT').textContent=lang==='zh'?'EN':'中文';
+  renderSpark();renderTabs();renderGrid();bgmUI();
+  $('mT').textContent=t('newTitle');$('fOk').textContent=t('save');
+  document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+  measure();
+}
+twInit();
+lw.classList.toggle('lit',root.dataset.theme==='dark');
+applyLang();
+document.fonts.ready.then(measure);
+fabCheck();
+</script>
+</body>
+</html>
